@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="button.css" />
+    <title>Wink api example</title>
+    <script>
+      window.addEventListener('load', (event) => {
+        const loginButton = document.getElementById('btn-home');
+        if (!loginButton) {
+          alert('No back button found in the document!');
+        } else {
+          loginButton.addEventListener('click', () => {
+            document.location.href = '/';
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div class="center">
+      <div class="base">
+        <span><b>WinkLogin</b></span
+        ><span> Dev example v1.7.2 (winkwallet)</span>
+      </div>
+      <div class="base">
+        <span>You have been successfully logged out.</span>
+      </div>
+      <!-- WINK Login Buttton -->
+      <div class="toolbar">
+        <div class="login-button">
+          <button id="btn-home" class="wink-oauth-button wink-oauth-button--secondary">
+            Go Back to Home Page
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

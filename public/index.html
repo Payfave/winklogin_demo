@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="button.css" />
+    <link href="https://fonts.cdnfonts.com/css/roboto" rel="stylesheet" />
+    <title>Wink Login AuthJS example</title>
+    <script src="winklogin.module.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <script>
+      // Client's configuration
+      const clientId = 'stage-winkdemostore';
+      var config = {
+        url: 'https://stagekeycloak.winklogin.com',
+        realm: 'wink',
+        clientId,
+        onAuthErrorFailure: (error) => console.error(error),
+        loggingEnabled: true,
+      };
+      const winkLoginClient = getWinkLoginClient(config);
+      var refreshButtonInterval;
+
+      window.addEventListener('load', (event) => {
+        // Initialization of wink login with callback functions
+        winkLoginClient.winkInit({
+          onFailure: (error) => console.error(error),
+          onSuccess: winkLoadUserProfile,
+        });
+
+        // Initialization of login button onclick function
+        const loginButton = document.getElementById('wink-oauth-button');
+
+        loginButton.addEventListener('click', () => {
+          winkLoginClient.winkLogin({
+            onFailure: (error) => console.error(error),
+          });
+        });
+      });
+
+      function winkLoadUserProfile() {
+        const data = parseJwt(winkLoginClient.token);
+        data['username'] = data.username ?? data.preferred_username;
+        renderUserData(winkLoginClient, data);
+        renderRefreshButton();
+      }
+
+      function parseJwt(token) {
+        var base64Url = token.split('.')[1];
+        var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        var jsonPayload = decodeURIComponent(
+          window
+            .atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        return JSON.parse(jsonPayload);
+      }
+
+      function renderRefreshButton() {
+        const refreshButton = document.getElementById('wink-oauth-refresh-button');
+        if (refreshButton) {
+          refreshButton.setAttribute('disabled', '');
+          refreshButtonInterval = setInterval(updateRefreshTokenButton, 1000);
+        }
+      }
+
+      function getFormattedTime(timestamp) {
+        var date = new Date(timestamp * 1000);
+        return date.toLocaleString();
+      }
+
+      function updateRefreshTokenButton() {
+        if (!winkLoginClient.tokenParsed) {
+          return;
+        }
+
+        const curTime = new Date();
+        const expTime = new Date(winkLoginClient.tokenParsed.exp * 1000);
+        if (expTime < curTime) {
+          const refreshButton = document.getElementById('wink-oauth-refresh-button');
+          refreshButton.removeAttribute('disabled');
+          clearInterval(refreshButtonInterval);
+        }
+      }
+
+      function renderButtons() {
+        let buttonsElement = document.getElementById('wink-buttons');
+        if (buttonsElement) {
+          buttonsElement.innerHTML = '';
+          buttonsElement.innerHTML = `
+   <button id="wink-oauth-refresh-button" class="wink-oauth-button" style="margin-right: 10px;" onclick="refreshToken();">Refresh token</button>
+   <button id="wink-oauth-logout-button" class="wink-oauth-button" onclick="signOut();">Sign out</button>
+   <button id="wink-oauth-validatetoken-button" class="wink-oauth-button" onclick="validateToken();">Validate Token</button>
+        `;
+        } else {
+          console.warn('no element with ID #wink-buttons found');
+        }
+      }
+
+      function renderTokens(profile) {
+        let tokensElement = document.getElementById('wink-tokens');
+        if (tokensElement) {
+          tokensElement.innerHTML = '';
+          tokensElement.innerHTML = `
+   <div class="tab">
+         <button class="tablinks" onclick="openTab(event, 'I')" id="defaultOpen">Profile information</button>
+         <button class="tablinks" onclick="openTab(event, 'ACT')">Access token</button>
+         <button class="tablinks" onclick="openTab(event, 'RET')">Refresh token</button>
+         <button class="tablinks" onclick="openTab(event, 'IDT')">ID token</button>
+      </div>
+      <div id="I" class="tabcontent">
+        <div class="row">
+          <div class="column" style="max-width: 255px">
+             <p><b>Username (winkTag)</b></p>
+             <p><b>Name (firstName)</b></p>
+           <p><b>Surname (lastName)</b></p>
+             <p><b>Phone (contactNo)</b></p>
+             <p><b>Email (email)</b></p>
+             <p><b>ID (identityId)</b></p>
+             <p><b>WinkToken</b></p>
+          </div>
+          <div class="column">
+             <p>${profile.username}</p>
+             <p>${
+               winkLoginClient.idTokenParsed.hasOwnProperty('given_name')
+                 ? winkLoginClient.idTokenParsed.given_name
+                 : 'Unknown'
+             }</p>
+             <p>${
+               winkLoginClient.idTokenParsed.hasOwnProperty('family_name')
+                 ? winkLoginClient.idTokenParsed.family_name
+                 : 'Unknown'
+             }</p>
+             <p>${
+               winkLoginClient.idTokenParsed.hasOwnProperty('phone_number')
+                 ? winkLoginClient.idTokenParsed.phone_number
+                 : 'Unknown'
+             }</p>
+             <p>${
+               winkLoginClient.idTokenParsed.hasOwnProperty('email')
+                 ? winkLoginClient.idTokenParsed.email
+                 : 'Unknown'
+             }</p>
+             <p>${
+               winkLoginClient.idTokenParsed.hasOwnProperty('oid')
+                 ? winkLoginClient.idTokenParsed.oid
+                 : 'Unknown'
+             }</p>
+             <p>${
+               winkLoginClient.idTokenParsed.hasOwnProperty('sub')
+                 ? winkLoginClient.idTokenParsed.sub
+                 : 'Unknown'
+             }</p>
+           </div>
+        </div>
+      </div>
+<div id="ACT" class="tabcontent">
+<p><b>Expiration date: </b>${getFormattedTime(winkLoginClient.tokenParsed.exp)}</p>
+<p><textarea id="aT" cols="100" rows="3">${winkLoginClient.token}</textarea></p>
+<p><textarea id="aTP" cols="100" rows="12">${JSON.stringify(
+            parseJwt(winkLoginClient.token),
+            null,
+            4
+          )}</textarea></p>
+</div>
+<div id="RET" class="tabcontent">
+<p><b>Expiration date: </b>${getFormattedTime(winkLoginClient.refreshTokenParsed.exp)}</p>
+<p><textarea id="rT" cols="100" rows="3">${winkLoginClient.refreshToken}</textarea></p>
+<p><textarea id="rTP" cols="100" rows="12">${JSON.stringify(
+            winkLoginClient.refreshTokenParsed,
+            null,
+            4
+          )}</textarea></p>
+</div>
+<div id="IDT" class="tabcontent">
+<p><b>Expiration date: </b>${getFormattedTime(winkLoginClient.idTokenParsed.exp)}</p>
+<p><textarea id="iT" cols="100" rows="3">${winkLoginClient.idToken}</textarea></p>
+<p><textarea id="iTP" cols="100" rows="12">${JSON.stringify(
+            winkLoginClient.idTokenParsed,
+            null,
+            4
+          )}</textarea></p>
+</div>
+      `;
+          document.getElementById('defaultOpen').click();
+        } else {
+          console.warn('no element with ID #wink-tokens found');
+        }
+        openTab();
+      }
+
+      function renderUserData(winkLoginKeycloak, profile) {
+        let userDataElement = document.getElementById('wink-user-data');
+        if (userDataElement) {
+          userDataElement.innerHTML = '';
+          userDataElement.innerHTML = `
+      `;
+          renderButtons();
+          renderTokens(profile);
+        } else {
+          console.warn('no element with ID #wink-user-data found');
+        }
+      }
+
+      function openTab(evt, tokenName) {
+        if (!evt || !tokenName) {
+          return;
+        }
+
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName('tabcontent');
+        for (i = 0; i < tabcontent.length; i++) {
+          tabcontent[i].style.display = 'none';
+        }
+
+        tablinks = document.getElementsByClassName('tablinks');
+        for (i = 0; i < tablinks.length; i++) {
+          tablinks[i].className = tablinks[i].className.replace(' active', '');
+        }
+
+        document.getElementById(tokenName).style.display = 'block';
+        evt.currentTarget.className += ' active';
+      }
+
+      function signOut() {
+        winkLoginClient.winkLogout({
+          onFailure: (error) => console.error(error),
+        });
+      }
+
+      function refreshToken() {
+        winkLoginClient
+          .updateToken(0)
+          .then(function (refreshed) {
+            if (refreshed) {
+              console.log('Token was successfully refreshed');
+              winkLoadUserProfile();
+            } else {
+              console.log('Token is still valid');
+            }
+          })
+          .catch(function (error) {
+            console.log('Failed to refresh the token, or the session has expired');
+            console.log(error);
+          });
+      }
+
+      function validateToken() {
+        console.log('validateToken');
+        const token = winkLoginClient.token ?? winkGetCookie('wink_id_token');
+        //  $("#wink-oauth-validatetoken-button").click(function (e) {
+        var formData = {
+          ClientId: clientId,
+          AccessToken: token,
+          ClientSecret: 'xH5j9!L3zF7wK#',
+        };
+        console.log(formData);
+        //Array
+        $.ajax({
+          contentType: 'application/json',
+          type: 'POST',
+          url: 'https://stage-api.winklogin.com/api/ConfidentialClient/verify-client',
+          data: JSON.stringify(formData),
+          dataType: 'json',
+
+          success: function (result, status, xhr) {
+            var table = $('<table><tr><th>Profile Details</th></tr>');
+            table.append('<tr></tr>');
+            table.append('<tr><td>FirstName:</td><td>' + result['firstName'] + '</td></tr>');
+            table.append('<tr><td>LastName:</td><td>' + result['lastName'] + '</td></tr>');
+            table.append('<tr><td>ContactNo:</td><td>' + result['contactNo'] + '</td></tr>');
+            table.append('<tr><td>Email:</td><td>' + result['email'] + '</td></tr>');
+            table.append('<tr><td>WinkTag:</td><td>' + result['winkTag'] + '</td></tr>');
+            table.append('<tr><td>WinkToken:</td><td>' + result['winkToken'] + '</td></tr>');
+            table.append('<tr><td>ExpiryTime:</td><td>' + result['expiryTime'] + '</td></tr>');
+            //$("#tBody").empty();
+            $('#tBody').append(table);
+          },
+          error: function (xhr, status, error) {
+            alert('Result: ' + status + ' ' + error + ' ' + xhr.status + ' ' + xhr.statusText);
+            console.error(error);
+          },
+        });
+        // });
+        //disable
+        $('#wink-oauth-validatetoken-button').disabled = true;
+        document.getElementById('wink-oauth-validatetoken-button').disabled = true;
+      }
+    </script>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div class="center">
+      <div class="base">
+        <span><b>WinkLogin</b></span
+        ><span>Dev example v1.7.2 (winkdemostore)</span>
+      </div>
+      <!-- WINK Login Buttton -->
+      <div class="toolbar">
+        <div class="login-button">
+          <button id="wink-oauth-button" class="wink-oauth-button wink-oauth-button--secondary">
+            <img src="./assets/semicolon-red.svg" alt="login button" />
+            Login with WINK
+          </button>
+        </div>
+        <div id="wink-buttons"></div>
+      </div>
+      <div id="wink-user-data"></div>
+      <div id="wink-tokens"></div>
+
+      <div id="message">
+        <table>
+          <tbody id="tBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

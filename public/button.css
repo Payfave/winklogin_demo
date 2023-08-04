@@ -1,0 +1,78 @@
+/** Global button styles */
+.wink-oauth-button {
+  cursor: pointer;
+  font-family: 'Source Sans Pro', arial, sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  -webkit-transition: background-color 250ms linear;
+  -ms-transition: background-color 250ms linear;
+  transition: background-color 250ms linear;
+  border: none;
+  font-size: 18px;
+  line-height: 25px;
+  letter-spacing: 0.21px;
+  padding: 15px 55px;
+  gap: 10px;
+  text-decoration: none;
+  box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.084), 0px 2px 3px rgba(0, 0, 0, 0.168);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  height: fit-content;
+}
+
+.wink-oauth-button:hover {
+  -webkit-transition: background-color 250ms linear;
+  -ms-transition: background-color 250ms linear;
+  transition: background-color 250ms linear;
+}
+
+.wink-oauth-button svg {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+/** Primary button */
+.wink-oauth-button--primary {
+  background: #3d4897;
+  color: #ffff;
+}
+
+.wink-oauth-button--primary:hover {
+  background-color: #ffffff;
+  color: #3d4897;
+}
+
+/** Secondary button */
+.wink-oauth-button--secondary {
+  background: #ffffff;
+  color: #0000008a;
+}
+
+.wink-oauth-button--secondary:hover {
+  background-color: #3d4897;
+  color: #ffff;
+}
+
+/** Dark button */
+.wink-oauth-button--dark {
+  background: #000000;
+  color: #ffffff;
+}
+
+.wink-oauth-button--dark:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/** Centered button */
+.wink-oauth-button--fit-to-text {
+  padding: 15px;
+}
+
+/** Left aligned button */
+.wink-oauth-button--left-aligned {
+  padding-right: 100px;
+  padding-left: 15px;
+}
